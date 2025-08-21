@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# Test/coverage
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+tests/__pycache__/
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (se usar frontend)
+node_modules/
+
+# Misc
+*.bak
+*.swp

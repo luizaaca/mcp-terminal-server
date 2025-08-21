@@ -1,0 +1,19 @@
+{
+  "sudo_commands": [
+    "sudo",
+    "doas",
+    "runas"
+  ],
+  "destructive_commands": [
+    "rm -rf",
+    "del /F /S /Q",
+    "format"
+  ],
+  "package_managers": [
+    "apt",
+    "yum",
+    "pacman",
+    "winget",
+    "choco"
+  ]
+}
