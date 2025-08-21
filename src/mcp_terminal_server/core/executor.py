@@ -9,36 +9,36 @@ logger = logging.getLogger(__name__)
 
 class CommandExecutor:
     """
-    Executa comandos do sistema de forma assíncrona e gerencia o processo.
+    Executes system commands asynchronously and manages the process.
     """
     def __init__(self, output_callback: Callable[[str], Coroutine[Any, Any, None]]):
         """
-        Inicializa o CommandExecutor.
+        Initialize the CommandExecutor.
 
         Args:
-            output_callback: Uma função de callback assíncrona para enviar o output do comando.
+            output_callback: An async callback function to send command output.
         """
         self.output_callback = output_callback
 
 
     async def execute_command(self, command: str, session: Session) -> Tuple[int, str]:
         """
-        Executa um comando no terminal de forma assíncrona.
+        Execute a shell command asynchronously.
 
         Args:
-            command (str): O comando a ser executado.
-            session (Session): A sessão na qual o comando será executado.
+            command (str): The command to execute.
+            session (Session): The session in which the command will run.
 
         Returns:
-            Tuple[int, str]: Uma tupla contendo o código de saída e o output completo.
+            Tuple[int, str]: A tuple containing the exit code and the full output.
         """
         command_id = None
         full_output_chunks = []
         try:
-            # Define um callback aninhado para capturar o output e fazer o streaming
+            # Nested callback to capture output and forward it for real-time streaming
             async def stream_and_capture_callback(session_id: str, chunk: str):
                 full_output_chunks.append(chunk)
-                # Chama o callback original para streaming em tempo real (e.g., websocket)
+                # Call original callback to stream in real time (e.g., websocket)
                 await self.output_callback(session_id, chunk)
 
             process = await asyncio.create_subprocess_shell(
@@ -49,11 +49,11 @@ class CommandExecutor:
                 env=session.environment_variables
             )
 
-            # Adiciona o processo à sessão para que possa ser cancelado
+            # Add the process to the session so it can be cancelled
             command_id = f"cmd_{id(process)}"
             session.active_processes[command_id] = process
 
-            # Leitura assíncrona do stdout e stderr
+            # Asynchronously read stdout and stderr
             await asyncio.gather(
                 self._stream_output(process.stdout, session.session_id, stream_and_capture_callback),
                 self._stream_output(process.stderr, session.session_id, stream_and_capture_callback)
@@ -61,11 +61,11 @@ class CommandExecutor:
 
             await process.wait()
             exit_code = process.returncode
-            logger.info(f"Comando '{command}' finalizado com código de saída: {exit_code}")
+            logger.info(f"Command '{command}' finished with exit code: {exit_code}")
 
         except Exception as e:
-            logger.error(f"Erro ao executar o comando '{command}': {e}")
-            error_message = f"Erro: {e}\n"
+            logger.error(f"Error executing command '{command}': {e}")
+            error_message = f"Error: {e}\n"
             full_output_chunks.append(error_message)
             await self.output_callback(session.session_id, error_message)
             exit_code = -1
@@ -77,7 +77,7 @@ class CommandExecutor:
 
     async def _stream_output(self, stream: asyncio.StreamReader, session_id: str, callback: Callable[[str, str], Coroutine[Any, Any, None]]):
         """
-        Lê o output de um stream e o envia para o callback.
+        Read output from a stream and forward it to the callback.
         """
         while True:
             try:
@@ -86,27 +86,27 @@ class CommandExecutor:
                     break
                 await callback(session_id, line.decode('utf-8', errors='replace'))
             except Exception as e:
-                logger.error(f"Erro ao ler o stream de output: {e}")
+                logger.error(f"Error reading output stream: {e}")
                 break
 
     async def cancel_command(self, command_id: str, session: Session):
         """
-        Cancela um comando em execução.
+        Cancel a running command.
 
         Args:
-            command_id (str): O ID do comando a ser cancelado.
-            session (Session): A sessão onde o comando está rodando.
+            command_id (str): The ID of the command to cancel.
+            session (Session): The session where the command is running.
         """
         if command_id in session.active_processes:
             process = session.active_processes[command_id]
             try:
                 process.terminate()
                 await process.wait()
-                logger.info(f"Comando {command_id} cancelado.")
+                logger.info(f"Command {command_id} cancelled.")
                 del session.active_processes[command_id]
             except ProcessLookupError:
-                logger.warning(f"Processo para o comando {command_id} já não existia.")
+                logger.warning(f"Process for command {command_id} no longer existed.")
             except Exception as e:
-                logger.error(f"Erro ao cancelar o comando {command_id}: {e}")
+                logger.error(f"Error cancelling command {command_id}: {e}")
         else:
-            logger.warning(f"Tentativa de cancelar um comando não encontrado: {command_id}")
+            logger.warning(f"Attempted to cancel unknown command: {command_id}")

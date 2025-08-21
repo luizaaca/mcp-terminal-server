@@ -1,25 +1,25 @@
 # MCP Terminal Server
 
-Um servidor MCP (Model Context Protocol) para execução segura de comandos de terminal via LLM, com controle total do sistema operacional.
+A MCP (Model Context Protocol) server for secure execution of terminal commands via LLMs, with full operating system control.
 
-## 🚀 Funcionalidades
+## 🚀 Features
 
-- **Execução Universal**: Suporte completo Windows/Linux/macOS
-- **Controle Total**: Comandos administrativos com elevação automática de privilégios
-- **Segurança**: Confirmação obrigatória antes da execução
-- **Streaming**: Output em tempo real dos comandos
-- **Persistência**: Mantém contexto (diretório, variáveis de ambiente)
-- **Concorrência**: Execução simultânea com controle de processos
-- **Cancelamento**: Detecção e interrupção de comandos longos
-- **Histórico**: Base de dados com comandos executados
+- **Universal Execution**: Full support for Windows / Linux / macOS
+- **Full Control**: Administrative commands with controlled privilege elevation
+- **Security**: Mandatory confirmation before execution
+- **Streaming**: Real-time command output
+- **Persistence**: Maintains context (working directory, environment variables)
+- **Concurrency**: Concurrent execution with process management
+- **Cancellation**: Detection and interruption of long-running commands
+- **History**: Database of executed commands
 
-## 📦 Instalação
+## 📦 Installation
 
 ```bash
 pip install mcp-terminal-server
 ```
 
-### Desenvolvimento
+### Development
 
 ```bash
 git clone https://github.com/usuario/mcp-terminal-server
@@ -27,15 +27,15 @@ cd mcp-terminal-server
 pip install -e ".[dev]"
 ```
 
-## 🔧 Uso
+## 🔧 Usage
 
-### Como Servidor MCP
+### As an MCP Server
 
 ```bash
 mcp-terminal-server --port 8000 --host localhost
 ```
 
-### Configuração em Claude Desktop
+### Claude Desktop Configuration
 
 ```json
 {
@@ -48,7 +48,7 @@ mcp-terminal-server --port 8000 --host localhost
 }
 ```
 
-### Programático
+### Programmatic
 
 ```python
 from mcp_terminal_server import MCPTerminalServer
@@ -57,7 +57,7 @@ server = MCPTerminalServer()
 await server.start()
 ```
 
-## 🏗️ Estrutura do Projeto
+## 🏗️ Project Structure
 
 ```
 mcp-terminal-server/
@@ -78,7 +78,7 @@ mcp-terminal-server/
 │       ├── core/
 │       │   ├── __init__.py
 │       │   ├── executor.py          # CommandExecutor
-│       │   ├── session.py           # SessionManager  
+│       │   ├── session.py           # SessionManager
 │       │   ├── security.py          # SecurityManager
 │       │   └── database.py          # DatabaseManager
 │       ├── mcp/
@@ -88,11 +88,11 @@ mcp-terminal-server/
 │       ├── utils/
 │       │   ├── __init__.py
 │       │   ├── platform.py          # OS detection
-│       │   ├── process.py           # Process utils
+│       │   ├── process.py           # Process utilities
 │       │   └── validation.py        # Input validation
 │       └── data/
-│           ├── commands.sql         # Schema inicial
-│           └── known_commands.json  # Comandos conhecidos
+│           ├── commands.sql         # Initial schema
+│           └── known_commands.json  # Known commands
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py
@@ -115,54 +115,54 @@ mcp-terminal-server/
     └── build.sh
 ```
 
-## 🔒 Segurança
+## 🔒 Security
 
-- **Confirmação obrigatória** para todos os comandos
-- **Detecção automática** de comandos administrativos
-- **Elevação controlada** de privilégios
-- **Validação** de entrada e sanitização
-- **Logging** completo de ações
+- **Mandatory confirmation** for sensitive commands
+- **Automatic detection** of administrative commands
+- **Controlled privilege escalation**
+- **Input validation** and sanitization
+- **Comprehensive logging**
 
-## 🧪 Testes
+## 🧪 Tests
 
 ```bash
-# Testes unitários
+# Unit tests
 pytest tests/
 
-# Testes de integração
+# Integration tests
 pytest tests/integration/
 
 # Coverage
 pytest --cov=mcp_terminal_server tests/
 ```
 
-## 📋 Comandos Disponíveis
+## 📋 Available Commands
 
-### Básicos
-- `execute_command`: Executa comando no terminal
-- `get_current_directory`: Retorna diretório atual
-- `change_directory`: Altera diretório de trabalho
-- `list_processes`: Lista processos ativos
-- `cancel_command`: Cancela comando em execução
+### Basic
+- `execute_command`: Execute a command in the terminal
+- `get_current_directory`: Return the current working directory
+- `change_directory`: Change the working directory
+- `list_processes`: List active processes
+- `cancel_command`: Cancel a running command
 
-### Avançados
-- `get_system_info`: Informações do sistema
-- `get_command_history`: Histórico de comandos
-- `set_environment_var`: Define variável de ambiente
-- `get_environment_vars`: Lista variáveis de ambiente
+### Advanced
+- `get_system_info`: System information
+- `get_command_history`: Command history
+- `set_environment_var`: Set an environment variable
+- `get_environment_vars`: List environment variables
 
-## 🤝 Contribuição
+## 🤝 Contributing
 
-1. Fork o projeto
-2. Crie uma branch (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Abra um Pull Request
+1. Fork the repository
+2. Create a branch (`git checkout -b feature/new-feature`)
+3. Commit your changes (`git commit -am 'Add new feature'`)
+4. Push to the branch (`git push origin feature/new-feature`)
+5. Open a Pull Request
 
-## 📄 Licença
+## 📄 License
 
-MIT License - veja [LICENSE](LICENSE) para detalhes.
+MIT License - see [LICENSE](LICENSE) for details.
 
-## ⚠️ Aviso
+## ⚠️ Warning
 
-Este servidor permite execução irrestrita de comandos do sistema. Use apenas em ambientes confiáveis e sempre revise comandos antes da execução.
+This server allows unrestricted execution of system commands. Run only in trusted environments and always review commands before execution.

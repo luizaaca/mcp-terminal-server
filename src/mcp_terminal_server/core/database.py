@@ -2,21 +2,20 @@ import sqlite3
 from pathlib import Path
 import logging
 
-# Configuração do logging
+# Logging configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class DatabaseManager:
     """
-    Gerencia o banco de dados para o histórico de comandos.
+    Manages the database for command history.
     """
     def __init__(self, db_path: Path = None):
         """
-        Inicializa o DatabaseManager.
+        Initialize the DatabaseManager.
 
         Args:
-            db_path (Path, optional): Caminho para o arquivo do banco de dados. 
-                                      Se None, usa o padrão em 'src/mcp_terminal_server/data/terminal_history.db'.
+            db_path (Path, optional): Path to the database file. If None, uses the default in 'src/mcp_terminal_server/data/terminal_history.db'.
         """
         if db_path is None:
             self.db_path = Path(__file__).parent.parent / "data" / "terminal_history.db"
@@ -28,25 +27,25 @@ class DatabaseManager:
         self._initialize_db()
 
     def _get_connection(self):
-        """Retorna uma nova conexão com o banco de dados."""
+        """Return a new connection to the database."""
         try:
             return sqlite3.connect(self.db_path)
         except sqlite3.Error as e:
-            logger.error(f"Erro ao conectar ao banco de dados: {e}")
+            logger.error(f"Error connecting to database: {e}")
             raise
 
     def _initialize_db(self):
         """
-        Garante que o banco de dados e a tabela de histórico existam.
+        Ensure the database and history table exist.
         """
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 
-                # Lê o script SQL para criar a tabela
+                # Read the SQL script to create the table
                 sql_script_path = self.db_path.parent / "commands.sql"
                 if not sql_script_path.exists():
-                    logger.error(f"Arquivo de schema SQL não encontrado em: {sql_script_path}")
+                    logger.error(f"SQL schema file not found at: {sql_script_path}")
                     return
 
                 with open(sql_script_path, 'r') as f:
@@ -54,22 +53,22 @@ class DatabaseManager:
                 
                 cursor.executescript(schema)
                 conn.commit()
-                logger.info("Banco de dados inicializado com sucesso.")
+                logger.info("Database initialized successfully.")
         except sqlite3.Error as e:
-            logger.error(f"Erro ao inicializar o banco de dados: {e}")
+            logger.error(f"Error initializing the database: {e}")
         except IOError as e:
-            logger.error(f"Erro ao ler o arquivo de schema SQL: {e}")
+            logger.error(f"Error reading the SQL schema file: {e}")
 
     def log_command(self, session_id: str, command: str, output: str, exit_code: int, success: bool):
         """
-        Registra um comando executado no banco de dados.
+        Record an executed command in the database.
 
         Args:
-            session_id (str): O ID da sessão onde o comando foi executado.
-            command (str): O comando que foi executado.
-            output (str): A saída do comando.
-            exit_code (int): O código de saída do comando.
-            success (bool): Se o comando foi executado com sucesso.
+            session_id (str): The session ID where the command was executed.
+            command (str): The executed command.
+            output (str): The command output.
+            exit_code (int): The command exit code.
+            success (bool): Whether the command executed successfully.
         """
         sql = """
         INSERT INTO command_history (session_id, command, output, exit_code, success)
@@ -80,20 +79,20 @@ class DatabaseManager:
                 cursor = conn.cursor()
                 cursor.execute(sql, (session_id, command, output, exit_code, success))
                 conn.commit()
-                logger.info(f"Comando registrado para a sessão {session_id}: {command}")
+                logger.info(f"Command logged for session {session_id}: {command}")
         except sqlite3.Error as e:
-            logger.error(f"Erro ao registrar comando no banco de dados: {e}")
+            logger.error(f"Error logging command to the database: {e}")
 
     def get_history(self, session_id: str = None, limit: int = 100):
         """
-        Recupera o histórico de comandos.
+        Retrieve the command history.
 
         Args:
-            session_id (str, optional): Filtra o histórico por ID de sessão. Se None, retorna de todas as sessões.
-            limit (int, optional): Limita o número de registros retornados.
+            session_id (str, optional): Filter history by session ID. If None, returns across all sessions.
+            limit (int, optional): Limit the number of records returned.
 
         Returns:
-            list: Uma lista de tuplas com os registros do histórico.
+            list: A list of tuples containing history records.
         """
         try:
             with self._get_connection() as conn:
@@ -107,11 +106,11 @@ class DatabaseManager:
                 
                 return cursor.fetchall()
         except sqlite3.Error as e:
-            logger.error(f"Erro ao buscar histórico de comandos: {e}")
+            logger.error(f"Error fetching command history: {e}")
             return []
 
     def close(self):
-        """Fecha a conexão com o banco de dados, se estiver aberta."""
-        # As conexões são gerenciadas pelo `with`, então este método pode não ser estritamente necessário
-        # a menos que uma conexão persistente seja usada no futuro.
-        logger.info("Gerenciador de banco de dados finalizado.")
+        """Close the database connection if open."""
+        # Connections are managed by `with` blocks, so this method may not be strictly necessary
+        # unless a persistent connection is used in the future.
+        logger.info("Database manager shut down.")

@@ -6,32 +6,32 @@ from ..core.session import Session
 
 logger = logging.getLogger(__name__)
 
-# Handlers para os comandos do servidor MCP
+# Handlers for MCP server commands
 
 async def execute_command_handler(server: Any, params: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Handler para o comando 'execute_command'.
+    Handler for the 'execute_command' command.
     """
     command = params.get("command")
     session_id = params.get("session_id")
 
     if not command:
-        return {"error": "Comando não fornecido."}
+        return {"error": "Command not provided."}
 
     session = server.session_manager.get_session(session_id)
     if not session:
-        return {"error": f"Sessão '{session_id}' não encontrada."}
+        return {"error": f"Session '{session_id}' not found."}
 
-    # 1. Verificação de Segurança
+    # 1. Security check
     if server.security_manager.needs_confirmation(command):
         if not server.security_manager.confirm_command(command):
-            return {"output": "Execução cancelada pelo usuário.", "exit_code": -1, "success": False}
+            return {"output": "Execution cancelled by user.", "exit_code": -1, "success": False}
 
-    # 2. Execução do Comando
+    # 2. Command execution
     exit_code, full_output = await server.executor.execute_command(command, session)
     success = exit_code == 0
 
-    # 3. Log no Banco de Dados
+    # 3. Log to the database
     server.db_manager.log_command(
         session_id=session.session_id,
         command=command,
@@ -44,40 +44,40 @@ async def execute_command_handler(server: Any, params: Dict[str, Any]) -> Dict[s
 
 async def change_directory_handler(server: Any, params: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Handler para o comando 'change_directory'.
+    Handler for the 'change_directory' command.
     """
     path = params.get("path")
     session_id = params.get("session_id")
     session = server.session_manager.get_session(session_id)
 
     if not path or not session:
-        return {"error": "Parâmetros inválidos."}
+        return {"error": "Invalid parameters."}
 
     if session.change_directory(path):
         return {"current_directory": str(session.current_working_directory)}
     else:
-        return {"error": f"Não foi possível mudar para o diretório: {path}"}
+        return {"error": f"Unable to change to directory: {path}"}
 
 async def get_current_directory_handler(server: Any, params: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Handler para o comando 'get_current_directory'.
+    Handler for the 'get_current_directory' command.
     """
     session_id = params.get("session_id")
     session = server.session_manager.get_session(session_id)
     if session:
         return {"current_directory": str(session.current_working_directory)}
-    return {"error": "Sessão não encontrada."}
+    return {"error": "Session not found."}
 
 async def get_command_history_handler(server: Any, params: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Handler para o comando 'get_command_history'.
+    Handler for the 'get_command_history' command.
     """
     session_id = params.get("session_id")
     limit = params.get("limit", 100)
     history = server.db_manager.get_history(session_id, limit)
     return {"history": history}
 
-# Mapeamento de comandos para handlers
+# Mapping of commands to handlers
 COMMAND_HANDLERS = {
     "execute_command": execute_command_handler,
     "change_directory": change_directory_handler,

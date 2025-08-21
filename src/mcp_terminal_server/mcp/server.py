@@ -12,84 +12,84 @@ logger = logging.getLogger(__name__)
 
 class MCPServer:
     """
-    Servidor MCP que gerencia a lógica de negócio e o ciclo de vida das requisições.
+    MCP server that manages business logic and request lifecycle.
     """
     def __init__(self):
         self.db_manager = DatabaseManager()
         self.security_manager = SecurityManager()
         self.session_manager = SessionManager()
         
-        # O executor agora passa o session_id para o callback de stream
+        # The executor now passes the session_id to the stream callback
         self.executor = CommandExecutor(output_callback=self.stream_output)
         
         self._is_running = False
 
     async def handle_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Processa uma única requisição MCP.
+        Process a single MCP request.
         """
         command_name = request.get("command")
         params = request.get("params", {})
         session_id = params.get("session_id")
 
-        # Garante que uma sessão exista
+        # Ensure a session exists
         if not self.session_manager.get_session(session_id):
             self.session_manager.create_session(session_id)
-            logger.info(f"Nova sessão criada: {session_id}")
+            logger.info(f"New session created: {session_id}")
         
-        params["session_id"] = session_id # Garante que o session_id está nos params
+        params["session_id"] = session_id # Ensure session_id is present in params
 
         handler = COMMAND_HANDLERS.get(command_name)
         if handler:
             try:
                 return await handler(self, params)
             except Exception as e:
-                logger.error(f"Erro ao processar o comando '{command_name}': {e}")
+                logger.error(f"Error processing command '{command_name}': {e}")
                 return {"error": str(e)}
         else:
-            return {"error": f"Comando desconhecido: {command_name}"}
+            return {"error": f"Unknown command: {command_name}"}
 
     async def stream_output(self, session_id: str, output: str):
         """
-        Callback para o streaming de output do executor.
-        Envia dados para o cliente via WebSocket, se houver uma conexão ativa.
+        Callback for executor output streaming.
+        Sends data to the client via WebSocket if a connection is active.
         """
         session = self.session_manager.get_session(session_id)
         if session and hasattr(session, 'websocket') and session.websocket:
             try:
                 await session.websocket.send_json({"type": "stream", "output": output})
             except Exception as e:
-                logger.warning(f"Não foi possível enviar stream para a sessão {session_id}: {e}")
+                logger.warning(f"Unable to send stream to session {session_id}: {e}")
         else:
-            # Fallback para o console se não houver websocket
+            # Fallback to console if no websocket is available
             print(output, end='')
 
     async def start(self, host: str = "127.0.0.1", port: int = 8000):
         """
-        Inicia o servidor para escutar por conexões (simulado).
+        Start the server to listen for connections (simulated).
         """
         self._is_running = True
-        logger.info(f"Servidor MCP iniciado em {host}:{port}. Aguardando requisições...")
-        # Em um servidor real, aqui teríamos um loop de eventos (ex: com aiohttp, FastAPI).
-        # Para este exemplo, vamos manter o servidor "rodando" em um loop simples.
+        logger.info(f"MCP server started on {host}:{port}. Waiting for requests...")
+        # In a real server, we would integrate with an async web framework (e.g. FastAPI).
+        # For this example, keep the server running in a simple loop.
         while self._is_running:
             await asyncio.sleep(1)
 
     async def shutdown(self):
         """
-        Finaliza o servidor e seus componentes.
+        Shutdown the server and its components.
         """
         self._is_running = False
         self.db_manager.close()
-        logger.info("Servidor MCP finalizado.")
+        logger.info("MCP server shutdown.")
 
-# Exemplo de como o servidor poderia ser usado (para fins de teste)
+# Example of how the server could be used (for testing purposes)
 async def main():
     server = MCPServer()
-    # Simula a criação de uma sessão
+    # Simulate creating a session
     session = server.session_manager.create_session("user123")
 
-    # Simula uma requisição para listar arquivos
+    # Simulate a request to list files
     request = {
         "command": "execute_command",
         "params": {
@@ -98,16 +98,16 @@ async def main():
         }
     }
     response = await server.handle_request(request)
-    print("\n--- Resposta do Servidor ---")
+    print("\n--- Server Response ---")
     print(response)
     
-    # Simula uma requisição para mudar de diretório
+    # Simulate a request to change directory
     request_cd = {
         "command": "change_directory",
         "params": {"path": "..", "session_id": session.session_id}
     }
     response_cd = await server.handle_request(request_cd)
-    print("\n--- Resposta do Servidor (cd) ---")
+    print("\n--- Server Response (cd) ---")
     print(response_cd)
 
 if __name__ == "__main__":
