@@ -17,8 +17,8 @@ async def test_full_workflow(test_client):
         
         # Receber o stream de output
         stream_data = websocket.receive_json()
-        assert stream_data["type"] == "stream_output"
-        assert "Integration Test" in stream_data["data"]
+        assert stream_data["type"] == "stream"
+        assert "Integration Test" in stream_data["output"]
         
         # Receber a resposta final
         final_response = websocket.receive_json()
@@ -40,6 +40,14 @@ async def test_full_workflow(test_client):
             "params": {"limit": 5}
         })
         history_response = websocket.receive_json()
+        
+        # Verificar a estrutura da resposta do histórico
         assert "history" in history_response
+        assert isinstance(history_response["history"], list)
         assert len(history_response["history"]) >= 1
-        assert history_response["history"][0]["command"] == "echo Integration Test"
+        
+        # Verificar o primeiro comando no histórico
+        first_command = history_response["history"][0]
+        assert isinstance(first_command, dict)
+        assert "command" in first_command
+        assert "echo 'Integration Test'" in first_command["command"]

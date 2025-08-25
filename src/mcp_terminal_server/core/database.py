@@ -92,10 +92,11 @@ class DatabaseManager:
             limit (int, optional): Limit the number of records returned.
 
         Returns:
-            list: A list of tuples containing history records.
+            list: A list of dictionaries containing history records.
         """
         try:
             with self._get_connection() as conn:
+                conn.row_factory = sqlite3.Row  # Enable dictionary-like access
                 cursor = conn.cursor()
                 if session_id:
                     sql = "SELECT * FROM command_history WHERE session_id = ? ORDER BY timestamp DESC LIMIT ?"
@@ -104,7 +105,15 @@ class DatabaseManager:
                     sql = "SELECT * FROM command_history ORDER BY timestamp DESC LIMIT ?"
                     cursor.execute(sql, (limit,))
                 
-                return cursor.fetchall()
+                rows = cursor.fetchall()
+                result = []
+                for row in rows:
+                    row_dict = dict(row)
+                    if 'success' in row_dict:
+                        row_dict['success'] = bool(row_dict['success'])
+                    result.append(row_dict)
+                    
+                return result
         except sqlite3.Error as e:
             logger.error(f"Error fetching command history: {e}")
             return []

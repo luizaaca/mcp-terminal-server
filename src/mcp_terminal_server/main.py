@@ -3,13 +3,14 @@ Entry point for the MCP Terminal Server
 """
 
 import argparse
-import asyncio
 import logging
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Dict, Any
+from contextlib import asynccontextmanager
+import asyncio
 
 from mcp_terminal_server.mcp.server import MCPServer
 
@@ -22,19 +23,18 @@ class MCPRequest(BaseModel):
     command: str
     params: Dict[str, Any] = {}
 
-# Create the FastAPI application
-app = FastAPI()
-server = MCPServer()
-
-@app.on_event("startup")
-async def startup_event():
-    # Server startup logic can be placed here if needed
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
     logger.info("FastAPI server started and ready to accept requests.")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    await server.shutdown()
+    yield
+    # Shutdown logic
     logger.info("FastAPI server shut down.")
+
+# Create the FastAPI application with lifespan handler
+app = FastAPI(lifespan=lifespan)
+
+server = MCPServer()
 
 @app.post("/command")
 async def handle_command_request(request: MCPRequest):

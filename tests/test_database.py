@@ -20,7 +20,7 @@ async def test_log_and_get_history(temp_db):
     history = temp_db.get_history(session_id=session_id, limit=10)
     
     # Assert
-    assert len(history) == 1
+    assert len(history) == 1, f"Expected 1 entry, got {len(history)}. All entries: {all_history}"
     log_entry = history[0]
     assert log_entry["session_id"] == session_id
     assert log_entry["command"] == "echo 'Hello DB'"

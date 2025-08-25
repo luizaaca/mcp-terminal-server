@@ -1,10 +1,12 @@
 import asyncio
 import logging
+import traceback
+import platform
 from typing import Callable, Any, Coroutine, Tuple
 
 from .session import Session
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class CommandExecutor:
@@ -41,17 +43,32 @@ class CommandExecutor:
                 # Call original callback to stream in real time (e.g., websocket)
                 await self.output_callback(session_id, chunk)
 
-            process = await asyncio.create_subprocess_shell(
-                command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=session.current_working_directory,
-                env=session.environment_variables
-            )
+            # Create the subprocess with Windows compatibility
+            if platform.system() == "Windows":
+                logger.info("Creating subprocess for Windows")
+                # On Windows, use create_subprocess_exec with cmd.exe
+                process = await asyncio.create_subprocess_exec(
+                    "cmd", "/c", command,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    cwd=session.current_working_directory,
+                    env=session.environment_variables
+                )
+            else:
+                logger.info("Creating subprocess for Unix-like system")
+                # On Unix-like systems, use create_subprocess_shell
+                process = await asyncio.create_subprocess_shell(
+                    command,
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    cwd=session.current_working_directory,
+                    env=session.environment_variables
+                )
 
             # Add the process to the session so it can be cancelled
             command_id = f"cmd_{id(process)}"
             session.active_processes[command_id] = process
+            print(f"Command '{command}' started with PID: {process.pid}")
 
             # Asynchronously read stdout and stderr
             await asyncio.gather(
@@ -65,7 +82,8 @@ class CommandExecutor:
 
         except Exception as e:
             logger.error(f"Error executing command '{command}': {e}")
-            error_message = f"Error: {e}\n"
+            tb = traceback.format_exc()
+            error_message = f"Error: {tb}\n"
             full_output_chunks.append(error_message)
             await self.output_callback(session.session_id, error_message)
             exit_code = -1

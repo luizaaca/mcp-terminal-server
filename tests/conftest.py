@@ -20,18 +20,45 @@ from fastapi.testclient import TestClient
 
 @pytest.fixture(scope="function")
 def temp_db():
-    """Cria um banco de dados SQLite temporário para um teste."""
-    # Cria um arquivo temporário que é automaticamente removido na saída
-    with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
-        db_path = tmp.name
+    """Creates a temporary SQLite database with schema for testing."""
+    # Create a temporary directory that will contain both the DB and schema files
+    temp_dir = tempfile.mkdtemp()
     
-    db_manager = DatabaseManager(database_url=f"sqlite:///{db_path}")
-    db_manager.init_db()
+    # Create the database file
+    db_path = Path(temp_dir) / "test_db.db"
+    
+    # Create a temporary schema file in the same directory
+    schema_path = Path(temp_dir) / "commands.sql"
+    
+    # Write the schema to the file (same as in the real schema file)
+    with open(schema_path, 'w') as f:
+        f.write("""
+        CREATE TABLE IF NOT EXISTS command_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            command TEXT NOT NULL,
+            output TEXT,
+            exit_code INTEGER,
+            success BOOLEAN,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+    
+    # Pass the db_path to DatabaseManager
+    db_manager = DatabaseManager(db_path=db_path)
     
     yield db_manager
     
-    # Limpeza: remove o arquivo do banco de dados após o teste
-    os.unlink(db_path)
+    # Cleanup: close connection and remove temporary files
+    try:
+        if hasattr(db_manager, 'connection') and db_manager.connection:
+            db_manager.connection.close()
+        # Remove the temporary directory and all files in it
+        import shutil
+        shutil.rmtree(temp_dir)
+    except (PermissionError, FileNotFoundError) as e:
+        # If we can't delete, it's not critical for the test
+        print(f"Warning: Could not clean up temp test files: {e}")
 
 @pytest.fixture
 def test_client():

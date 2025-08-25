@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uuid
 from typing import Any, Dict
 
 from ..core.database import DatabaseManager
@@ -30,10 +31,10 @@ class MCPServer:
         """
         command_name = request.get("command")
         params = request.get("params", {})
-        session_id = params.get("session_id")
+        session_id = params.get("session_id", str(uuid.uuid4()))
 
         # Ensure a session exists
-        if not self.session_manager.get_session(session_id):
+        if not session_id or not self.session_manager.get_session(session_id):
             self.session_manager.create_session(session_id)
             logger.info(f"New session created: {session_id}")
         
@@ -62,26 +63,7 @@ class MCPServer:
                 logger.warning(f"Unable to send stream to session {session_id}: {e}")
         else:
             # Fallback to console if no websocket is available
-            print(output, end='')
-
-    async def start(self, host: str = "127.0.0.1", port: int = 8000):
-        """
-        Start the server to listen for connections (simulated).
-        """
-        self._is_running = True
-        logger.info(f"MCP server started on {host}:{port}. Waiting for requests...")
-        # In a real server, we would integrate with an async web framework (e.g. FastAPI).
-        # For this example, keep the server running in a simple loop.
-        while self._is_running:
-            await asyncio.sleep(1)
-
-    async def shutdown(self):
-        """
-        Shutdown the server and its components.
-        """
-        self._is_running = False
-        self.db_manager.close()
-        logger.info("MCP server shutdown.")
+            print(output, end='')    
 
 # Example of how the server could be used (for testing purposes)
 async def main():
