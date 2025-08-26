@@ -76,7 +76,7 @@ class SecurityManager:
 
         return False
 
-    def confirm_command(self, command: str) -> bool:
+    def confirm_command(self, command: str) -> tuple[bool,str]:
         """
         Prompt the user on the server terminal to confirm executing a command.
 
@@ -87,21 +87,15 @@ class SecurityManager:
             bool: True if the user confirms, False otherwise.
         """
         try:
-            # Print the confirmation prompt to the server console
-            prompt = f"\n[CONFIRMATION REQUIRED]\nExecute the potentially dangerous command below?\n\n  > {command}\n\nType 'y' or 'yes' to confirm, or any other key to cancel: "
-            print(prompt, end="", flush=True)
-            
             # Read user input directly from the server terminal
             answer = input().lower().strip()
             
             if answer in ['y', 'yes']:
                 logger.info(f"Execution of command '{command}' APPROVED by the user.")
-                print("-" * 20)
-                return True
+                return True, "Execution approved."
             else:
                 logger.warning(f"Execution of command '{command}' CANCELLED by the user.")
-                print("-" * 20)
-                return False
+                return False, "Security check: Provide confirmation [y/n] along the command to proceed."
         except Exception as e:
             logger.error(f"Error while requesting confirmation: {e}")
-            return False
+            return False, "Confirmation error."
