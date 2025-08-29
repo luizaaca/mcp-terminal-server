@@ -1,29 +1,24 @@
 # MCP Terminal Server
 
-A MCP (Model Context Protocol) server for secure execution of terminal commands via LLMs, with full operating system control.
+A MCP (Model Context Protocol) server for executing terminal commands.
 
 ## 🚀 Features
 
-- **Universal Execution**: Full support for Windows / Linux / macOS
-- **Full Control**: Administrative commands with controlled privilege elevation
-- **Security**: Mandatory confirmation before execution
-- **Streaming**: Real-time command output
-- **Persistence**: Maintains context (working directory, environment variables)
-- **Concurrency**: Concurrent execution with process management
-- **Cancellation**: Detection and interruption of long-running commands
-- **History**: Database of executed commands
+- **Windows CMD Execution**: Execute commands in a persistent Windows `cmd.exe` session.
+- **Session Persistence**: Maintains context (working directory, environment variables) across commands for a given session ID.
+- **Security**: Includes a confirmation mechanism for potentially destructive commands.
 
 ## 📦 Installation
 
+First, clone the repository and navigate into the directory:
 ```bash
-pip install mcp-terminal-server
+git clone https://github.com/usuario/mcp-terminal-server
+cd mcp-terminal-server
 ```
 
 ### Development
 
 ```bash
-git clone https://github.com/usuario/mcp-terminal-server
-cd mcp-terminal-server
 pip install -e ".[dev]"
 ```
 
@@ -48,15 +43,6 @@ mcp-terminal-server --port 8000 --host localhost
 }
 ```
 
-### Programmatic
-
-```python
-from mcp_terminal_server import MCPTerminalServer
-
-server = MCPTerminalServer()
-await server.start()
-```
-
 ## 🏗️ Project Structure
 
 ```
@@ -64,12 +50,9 @@ mcp-terminal-server/
 ├── README.md
 ├── LICENSE
 ├── pyproject.toml
-├── requirements.txt
-├── requirements-dev.txt
 ├── .gitignore
 ├── .github/
 │   └── workflows/
-│       ├── ci.yml
 │       └── release.yml
 ├── src/
 │   └── mcp_terminal_server/
@@ -99,20 +82,9 @@ mcp-terminal-server/
 │   ├── test_executor.py
 │   ├── test_session.py
 │   ├── test_security.py
-│   ├── test_database.py
-│   ├── test_server.py
 │   └── integration/
 │       ├── __init__.py
 │       ├── test_full_workflow.py
-│       └── test_platforms.py
-├── docs/
-│   ├── api.md
-│   ├── security.md
-│   ├── examples.md
-│   └── troubleshooting.md
-└── scripts/
-    ├── setup.py
-    └── build.sh
 ```
 
 ## 🔒 Security
@@ -138,18 +110,13 @@ pytest --cov=mcp_terminal_server tests/
 
 ## 📋 Available Commands
 
-### Basic
 - `execute_command`: Execute a command in the terminal
-- `get_current_directory`: Return the current working directory
-- `change_directory`: Change the working directory
-- `list_processes`: List active processes
-- `cancel_command`: Cancel a running command
 
-### Advanced
-- `get_system_info`: System information
-- `get_command_history`: Command history
-- `set_environment_var`: Set an environment variable
-- `get_environment_vars`: List environment variables
+## 🗺️ Roadmap
+
+- **Multi-OS Support**: Automatically detect the operating system and provide shell-specific commands.
+- **Command Layer**: Implement a command abstraction layer before the executor for better control and extensibility.
+- **Enhanced Security**: Improve the security and confirmation logic for sensitive operations.
 
 ## 🤝 Contributing
 
