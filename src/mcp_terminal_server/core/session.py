@@ -12,39 +12,13 @@ class Session:
     """
     Represents a single terminal session with its own state.
     """
-    def __init__(self, session_id: str):
+    def __init__(self, session_id: str, initial_dir: Optional[str] = None):
         self.session_id = session_id
-        self.current_working_directory = Path.cwd()
+        self.current_working_directory = Path(initial_dir) if initial_dir else Path.cwd()
         self.environment_variables: Dict[str, str] = os.environ.copy()
         self.active_processes: Dict[str, asyncio.subprocess.Process] = {} # Maps command_id to process
         self.websocket: Optional[WebSocket] = None
-
-    def set_env_var(self, key: str, value: str):
-        """Set an environment variable for the session."""
-        self.environment_variables[key] = value
-
-    def get_env_var(self, key: str) -> Optional[str]:
-        """Get an environment variable for the session."""
-        return self.environment_variables.get(key)
-
-    def change_directory(self, new_dir: str) -> bool:
-        """
-        Change the session's current working directory.
-        Returns True on success, False otherwise.
-        """
-        try:
-            # Try to resolve the new directory relative to the current one
-            target_dir = self.current_working_directory / new_dir
-            if target_dir.is_dir():
-                self.current_working_directory = target_dir.resolve()
-                return True
-            # If not a directory, try as an absolute path
-            elif Path(new_dir).is_dir():
-                self.current_working_directory = Path(new_dir).resolve()
-                return True
-        except Exception:
-            return False
-        return False
+    
 
 class SessionManager:
     """

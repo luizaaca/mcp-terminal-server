@@ -1,13 +1,17 @@
 import logging
 from mcp.server.fastmcp import FastMCP
-from core.executor import CommandExecutor
-from core.security import SecurityManager
-from core.session import SessionManager
+from .core.executor import CommandExecutor
+from .core.security import SecurityManager
+from .core.session import SessionManager
 
 logger = logging.getLogger(__name__)
 
 # Create an MCP server instance
-mcp_server = FastMCP("terminal")
+mcp_server = FastMCP(
+    "terminal",
+    "A terminal MCP server",
+    "v0.1.0-beta"
+)
 
 # Instantiate core components
 security_manager = SecurityManager()
@@ -78,7 +82,7 @@ async def execute_command(command: str, session_id: str) -> str:
     # Run the command execution in the background
     exit_code, output = await executor.execute_command(command, session)
 
-    return f"The execution returned with code {exit_code}:\n{output}"
+    return f"Exit Code: {exit_code}\nOutput:\n{output}"
 
 if __name__ == "__main__":
     # Initialize and run the server
