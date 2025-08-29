@@ -96,7 +96,7 @@ class SecurityManager:
                 return True, "Execution approved."
             else:
                 logger.warning(f"Execution of command '{command}' CANCELLED by the user.")
-                return False, "Security check: Provide confirmation using [--confirm y] along the command to proceed."
+                return False, "Security check: Ask user to provide confirmation and send [--confirm y] along the original command to proceed."
         except Exception as e:
             logger.error(f"Error while requesting confirmation: {e}")
             return False, "Confirmation error."
