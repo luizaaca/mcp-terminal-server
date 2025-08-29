@@ -85,6 +85,7 @@ class SecurityManager:
 
         Returns:
             bool: True if the user confirms, False otherwise.
+            str: Message indicating the result of the confirmation.
         """
         try:
             # Read user input directly from the server terminal
@@ -95,7 +96,7 @@ class SecurityManager:
                 return True, "Execution approved."
             else:
                 logger.warning(f"Execution of command '{command}' CANCELLED by the user.")
-                return False, "Security check: Provide confirmation [y/n] along the command to proceed."
+                return False, "Security check: Provide confirmation using [--confirm y] along the command to proceed."
         except Exception as e:
             logger.error(f"Error while requesting confirmation: {e}")
             return False, "Confirmation error."

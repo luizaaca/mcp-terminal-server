@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import traceback
 import platform
 from typing import Tuple
 
@@ -25,61 +24,75 @@ class CommandExecutor:
         Returns:
             Tuple[int, str]: A tuple containing the exit code and the full output.
         """
-        command_id = None
-        full_output_chunks = []
+        process = None
+        command_id = ""
         try:
-            # Nested callback to capture output and forward it for real-time streaming
-            async def stream_and_capture_callback(session_id: str, chunk: str):
-                full_output_chunks.append(chunk)
-
             # Create the subprocess with Windows compatibility
             if platform.system() == "Windows":
-                logger.info("Creating subprocess for Windows")
+                logger.debug("Creating subprocess for Windows: cmd /c %s", command)
                 # On Windows, use create_subprocess_exec with cmd.exe
                 process = await asyncio.create_subprocess_exec(
                     "cmd", "/c", command,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                     cwd=session.current_working_directory,
-                    env=session.environment_variables
+                    env=session.environment_variables,
                 )
             else:
-                logger.info("Creating subprocess for Unix-like system")
+                logger.debug("Creating subprocess for Unix-like system: %s", command)
                 # On Unix-like systems, use create_subprocess_shell
                 process = await asyncio.create_subprocess_shell(
                     command,
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                     cwd=session.current_working_directory,
-                    env=session.environment_variables
+                    env=session.environment_variables,
                 )
 
             # Add the process to the session so it can be cancelled
             command_id = f"cmd_{id(process)}"
             session.active_processes[command_id] = process
-            print(f"Command '{command}' started with PID: {process.pid}")
+            logger.info("Command '%s' started with PID: %d in session %s", command, process.pid, session.session_id)
 
-            # Asynchronously read stdout and stderr
-            await asyncio.gather(
-                self._stream_output(process.stdout, session.session_id, stream_and_capture_callback),
-                self._stream_output(process.stderr, session.session_id, stream_and_capture_callback)
+            # Asynchronously read stdout and stderr in parallel
+            stdout_task = asyncio.create_task(self._read_stream(process.stdout))
+            stderr_task = asyncio.create_task(self._read_stream(process.stderr))
+
+            # Wait for both streams to be fully read
+            stdout_bytes, stderr_bytes = await asyncio.gather(
+                stdout_task,
+                stderr_task
             )
 
+            # Wait for the process to terminate
             await process.wait()
             exit_code = process.returncode
-            logger.info(f"Command '{command}' finished with exit code: {exit_code}")
+            logger.info("Command '%s' finished with exit code: %d", command, exit_code)
+
+            output = stdout_bytes.decode(errors='replace')
+            stderr_output = stderr_bytes.decode(errors='replace')
+            if stderr_output:
+                output += f"\n[STDERR]\n{stderr_output}"
+
+            return exit_code, output
+
+        except asyncio.CancelledError:
+            logger.warning("Command '%s' was cancelled.", command)
+            if process and process.returncode is None:
+                process.terminate()
+                await process.wait()
+            return -1, "Command execution was cancelled."
 
         except Exception as e:
-            logger.error(f"Error executing command '{command}': {e}")
-            tb = traceback.format_exc()
-            error_message = f"Error: {tb}\n"
-            full_output_chunks.append(error_message)
-            await self.output_callback(session.session_id, error_message)
-            exit_code = -1
+            logger.error("Error executing command '%s': %s", command, e, exc_info=True)
+            return -1, f"An unexpected error occurred: {e}"
+
         finally:
             if command_id and command_id in session.active_processes:
                 del session.active_processes[command_id]
 
-        return exit_code, "".join(full_output_chunks)
-    
-
+    async def _read_stream(self, stream: asyncio.StreamReader) -> bytes:
+        """Reads all data from a stream until EOF."""
+        if not stream:
+            return b""
+        return await stream.read()
