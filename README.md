@@ -18,6 +18,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 
+
 ## 📦 Installation
 
 First, clone the repository and navigate into the directory:
