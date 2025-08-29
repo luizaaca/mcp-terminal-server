@@ -1,7 +1,7 @@
 import sys
 import os
 
-# Adiciona o diretório 'src' ao sys.path para facilitar os imports
+# Add the 'src' directory to sys.path to ease imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 
@@ -13,32 +13,38 @@ import importlib
 
 @pytest.fixture
 def test_client(monkeypatch):
-    """Fixture para o TestClient do FastAPI, com patch para FastMCP if needed."""
+    """Fixture for FastAPI TestClient, with patch for FastMCP if needed."""
     # Patch FastMCP to avoid ValueError during tests
     from mcp.server import fastmcp
-    class DummyFastMCP(fastmcp.FastMCP):
-        def __init__(self, *args, **kwargs):
-            # Do not raise ValueError
-            super().__init__(*args, **kwargs)
+    from fastapi import FastAPI
+    
+    class DummyFastMCP:
+        def __init__(self, name, description):
+            self.name = name
+            self.description = description
             self._tools = {}
+            self.app = FastAPI()  # Create a FastAPI app
+        
         def tool(self):
             def decorator(func):
                 self._tools[func.__name__] = func
                 return func
             return decorator
+        
         def run(self, *args, **kwargs):
             pass
+    
     monkeypatch.setattr(fastmcp, "FastMCP", DummyFastMCP)
     # Import app after patching
     app_module = importlib.import_module("mcp_terminal_server.main")
-    with TestClient(app_module.app) as client:
+    with TestClient(app_module.app.app) as client:  # Access the FastAPI app
         yield client
 
 
-# Permite que todos os testes sejam executados como assíncronos
+# Allows all tests to be run as asynchronous
 @pytest.fixture(scope="session")
 def event_loop():
-    """Cria uma instância do event loop para a sessão de testes."""
+    """Create an event loop instance for the test session."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()

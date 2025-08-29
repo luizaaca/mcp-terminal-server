@@ -9,13 +9,13 @@ from src.mcp_terminal_server.core.security import SecurityManager
 
 @pytest.fixture
 def security_manager():
-    """Fixture para criar uma instância do SecurityManager."""
+    """Fixture to create a SecurityManager instance."""
     return SecurityManager()
 
 
 @pytest.fixture
 def temp_config_file():
-    """Cria um arquivo de configuração temporário para testes."""
+    """Create a temporary configuration file for tests."""
     config_data = {
         "sudo_commands": ["sudo", "doas"],
         "destructive_commands": ["rm -rf", "del /F"],
@@ -31,21 +31,21 @@ def temp_config_file():
 
 
 def test_security_manager_initialization_default():
-    """Testa inicialização com arquivo padrão."""
+    """Tests initialization with default file."""
     manager = SecurityManager()
     assert manager.config_path.name == "known_commands.json"
     assert isinstance(manager.known_commands, dict)
 
 
 def test_security_manager_initialization_custom_config(temp_config_file):
-    """Testa inicialização com arquivo de configuração customizado."""
+    """Tests initialization with a custom configuration file."""
     manager = SecurityManager(temp_config_file)
     assert manager.config_path == temp_config_file
     assert "sudo_commands" in manager.known_commands
 
 
 def test_load_known_commands_success(temp_config_file):
-    """Testa carregamento bem-sucedido do arquivo de configuração."""
+    """Tests successful loading of the configuration file."""
     manager = SecurityManager(temp_config_file)
     commands = manager.known_commands
 
@@ -56,7 +56,7 @@ def test_load_known_commands_success(temp_config_file):
 
 
 def test_load_known_commands_file_not_found():
-    """Testa comportamento quando arquivo de configuração não existe."""
+    """Tests behavior when the configuration file does not exist."""
     non_existent = Path("/non/existent/path.json")
     manager = SecurityManager(non_existent)
 
@@ -64,41 +64,41 @@ def test_load_known_commands_file_not_found():
 
 
 def test_load_known_commands_invalid_json():
-    """Testa comportamento com JSON inválido."""
+    """Tests behavior with invalid JSON."""
     with patch('builtins.open', mock_open(read_data='invalid json')):
         manager = SecurityManager(Path("dummy.json"))
         assert manager.known_commands == {}
 
 
 def test_needs_confirmation_empty_command(security_manager):
-    """Testa comando vazio."""
+    """Tests empty command."""
     assert security_manager.needs_confirmation("") is False
     assert security_manager.needs_confirmation("   ") is False
 
 
 def test_needs_confirmation_sudo_commands(security_manager):
-    """Testa comandos que requerem privilégios elevados."""
+    """Tests commands that require elevated privileges."""
     assert security_manager.needs_confirmation("sudo rm -rf /") is True
     assert security_manager.needs_confirmation("doas apt update") is True
     assert security_manager.needs_confirmation("runas cmd") is True
 
 
 def test_needs_confirmation_destructive_commands(security_manager):
-    """Testa comandos destrutivos."""
+    """Tests destructive commands."""
     assert security_manager.needs_confirmation("rm -rf /some/path") is True
     assert security_manager.needs_confirmation("del /F /S /Q C:\\") is True
     assert security_manager.needs_confirmation("format C:") is True
 
 
 def test_needs_confirmation_package_managers(security_manager):
-    """Testa comandos de gerenciadores de pacotes."""
+    """Tests package manager commands."""
     assert security_manager.needs_confirmation("pip install requests") is True
     assert security_manager.needs_confirmation("apt update") is True
     assert security_manager.needs_confirmation("yum install nginx") is True
 
 
 def test_does_not_need_confirmation_safe_commands(security_manager):
-    """Testa comandos seguros que não precisam de confirmação."""
+    """Tests safe commands that don't require confirmation."""
     assert security_manager.needs_confirmation("ls -la") is False
     assert security_manager.needs_confirmation("echo 'hello'") is False
     assert security_manager.needs_confirmation("cd /tmp") is False
@@ -106,7 +106,7 @@ def test_does_not_need_confirmation_safe_commands(security_manager):
 
 
 def test_confirm_command_yes(security_manager, monkeypatch):
-    """Testa confirmação do usuário com resposta afirmativa."""
+    """Tests user confirmation with affirmative response."""
     monkeypatch.setattr('builtins.input', lambda: 'y')
     confirmed, message = security_manager.confirm_command("sudo reboot")
 
@@ -115,7 +115,7 @@ def test_confirm_command_yes(security_manager, monkeypatch):
 
 
 def test_confirm_command_yes_variations(security_manager, monkeypatch):
-    """Testa variações de resposta afirmativa."""
+    """Tests variations of affirmative responses."""
     for response in ['yes', 'YES', 'Y', 'Yes']:
         monkeypatch.setattr('builtins.input', lambda r=response: r)
         confirmed, message = security_manager.confirm_command("sudo reboot")
@@ -125,7 +125,7 @@ def test_confirm_command_yes_variations(security_manager, monkeypatch):
 
 
 def test_confirm_command_no(security_manager, monkeypatch):
-    """Testa confirmação do usuário com resposta negativa."""
+    """Tests user confirmation with negative response."""
     monkeypatch.setattr('builtins.input', lambda: 'n')
     confirmed, message = security_manager.confirm_command("sudo reboot")
 
@@ -134,7 +134,7 @@ def test_confirm_command_no(security_manager, monkeypatch):
 
 
 def test_confirm_command_no_variations(security_manager, monkeypatch):
-    """Testa variações de resposta negativa."""
+    """Tests variations of negative responses."""
     for response in ['no', 'NO', 'N', 'anything_else']:
         monkeypatch.setattr('builtins.input', lambda r=response: r)
         confirmed, message = security_manager.confirm_command("sudo reboot")
@@ -143,7 +143,7 @@ def test_confirm_command_no_variations(security_manager, monkeypatch):
 
 
 def test_confirm_command_input_error(security_manager, monkeypatch):
-    """Testa erro na leitura de input."""
+    """Tests input read error."""
     monkeypatch.setattr('builtins.input', lambda: (_ for _ in ()).throw(Exception("Input error")))
     confirmed, message = security_manager.confirm_command("sudo reboot")
 
@@ -152,7 +152,7 @@ def test_confirm_command_input_error(security_manager, monkeypatch):
 
 
 def test_complex_commands_requiring_confirmation(security_manager):
-    """Testa comandos complexos que devem requerer confirmação."""
+    """Tests complex commands that should require confirmation."""
     complex_commands = [
         "sudo pip install -r requirements.txt",
         "apt update && apt upgrade -y",
@@ -164,7 +164,7 @@ def test_complex_commands_requiring_confirmation(security_manager):
 
 
 def test_commands_with_whitespace(security_manager):
-    """Testa comandos com espaços em branco."""
+    """Tests commands with surrounding whitespace."""
     assert security_manager.needs_confirmation("  sudo rm -rf /  ") is True
     assert security_manager.needs_confirmation("pip install flask") is True
     assert security_manager.needs_confirmation("  ls -la  ") is False
